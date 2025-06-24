@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { CheckCircle, AlertCircle, X } from 'lucide-react';
+import PropTypes from 'prop-types';
 
 const Toast = ({ message, type = 'success', isVisible, onClose, duration = 3000 }) => {
   useEffect(() => {
@@ -49,6 +50,14 @@ const Toast = ({ message, type = 'success', isVisible, onClose, duration = 3000 
       </div>
     </div>
   );
+};
+
+Toast.propTypes = {
+  message: PropTypes.string.isRequired,
+  type: PropTypes.oneOf(['success', 'error']),
+  isVisible: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  duration: PropTypes.number,
 };
 
 export default Toast;

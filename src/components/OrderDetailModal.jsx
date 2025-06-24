@@ -1,21 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Package, CreditCard, MapPin, Mail, ExternalLink } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 import LoadingSpinner from './LoadingSpinner';
 import { apiService } from '../services/api';
+import PropTypes from 'prop-types';
 
 const OrderDetailModal = ({ orderId, isOpen, onClose }) => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (isOpen && orderId) {
-      fetchOrderDetails();
-    }
-  }, [isOpen, orderId]);
-
-  const fetchOrderDetails = async () => {
+  const fetchOrderDetails = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -27,12 +22,30 @@ const OrderDetailModal = ({ orderId, isOpen, onClose }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [orderId]);
+
+  useEffect(() => {
+    if (isOpen && orderId) {
+      fetchOrderDetails();
+    }
+  }, [isOpen, orderId, fetchOrderDetails]);
 
   const handleClose = () => {
     setOrder(null);
     setError(null);
     onClose();
+  };
+
+  const renderItem = (item, index) => {
+    // Handle both string and object formats
+    const itemText = typeof item === 'string' ? item : item?.name || 'Unknown item';
+    
+    return (
+      <li key={index} className="flex items-center text-sm text-gray-900">
+        <span className="w-2 h-2 bg-primary-500 rounded-full mr-3"></span>
+        {itemText}
+      </li>
+    );
   };
 
   if (!isOpen) return null;
@@ -132,12 +145,11 @@ const OrderDetailModal = ({ orderId, isOpen, onClose }) => {
                 </label>
                 <div className="bg-gray-50 rounded-lg p-4">
                   <ul className="space-y-2">
-                    {order.items.map((item, index) => (
-                      <li key={index} className="flex items-center text-sm text-gray-900">
-                        <span className="w-2 h-2 bg-primary-500 rounded-full mr-3"></span>
-                        {item}
-                      </li>
-                    ))}
+                    {order.items && order.items.length > 0 ? (
+                      order.items.map((item, index) => renderItem(item, index))
+                    ) : (
+                      <li className="text-sm text-gray-500">No items found</li>
+                    )}
                   </ul>
                 </div>
               </div>
@@ -181,6 +193,12 @@ const OrderDetailModal = ({ orderId, isOpen, onClose }) => {
       </div>
     </div>
   );
+};
+
+OrderDetailModal.propTypes = {
+  orderId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
 };
 
 export default OrderDetailModal;

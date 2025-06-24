@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { RefreshCw, Package, TrendingUp, Clock, CheckCircle } from 'lucide-react';
 import { useOrders } from '../hooks/useOrders';
 import { apiService } from '../services/api';

@@ -1,5 +1,5 @@
-import React from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
+import PropTypes from 'prop-types';
 
 const ErrorMessage = ({ message, onRetry }) => {
   return (
@@ -18,6 +18,11 @@ const ErrorMessage = ({ message, onRetry }) => {
       )}
     </div>
   );
+};
+
+ErrorMessage.propTypes = {
+  message: PropTypes.string.isRequired,
+  onRetry: PropTypes.func,
 };
 
 export default ErrorMessage;

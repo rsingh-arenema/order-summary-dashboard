@@ -1,6 +1,6 @@
-import React from 'react';
 import { Package2, Calendar, DollarSign, Truck } from 'lucide-react';
 import StatusBadge from './StatusBadge';
+import PropTypes from 'prop-types';
 
 const OrderTable = ({ orders, onOrderClick }) => {
   const formatCurrency = (amount) => {
@@ -29,6 +29,26 @@ const OrderTable = ({ orders, onOrderClick }) => {
       default:
         return 'text-gray-600 bg-gray-50';
     }
+  };
+
+  const renderItems = (items) => {
+    if (!items || items.length === 0) return 'No items';
+    
+    // Handle both string arrays and object arrays
+    const firstItem = typeof items[0] === 'string' ? items[0] : items[0]?.name || 'Unknown item';
+    
+    if (items.length > 1) {
+      return (
+        <div>
+          <div>{firstItem}</div>
+          <div className="text-xs text-gray-500">
+            +{items.length - 1} more item{items.length > 2 ? 's' : ''}
+          </div>
+        </div>
+      );
+    }
+    
+    return firstItem;
   };
 
   if (orders.length === 0) {
@@ -93,16 +113,7 @@ const OrderTable = ({ orders, onOrderClick }) => {
                 </td>
                 <td className="px-6 py-4">
                   <div className="text-sm text-gray-900">
-                    {order.items.length > 1 ? (
-                      <div>
-                        <div>{order.items[0]}</div>
-                        <div className="text-xs text-gray-500">
-                          +{order.items.length - 1} more item{order.items.length > 2 ? 's' : ''}
-                        </div>
-                      </div>
-                    ) : (
-                      order.items[0]
-                    )}
+                    {renderItems(order.items)}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -127,6 +138,11 @@ const OrderTable = ({ orders, onOrderClick }) => {
       </div>
     </div>
   );
+};
+
+OrderTable.propTypes = {
+  orders: PropTypes.array.isRequired,
+  onOrderClick: PropTypes.func.isRequired,
 };
 
 export default OrderTable;
