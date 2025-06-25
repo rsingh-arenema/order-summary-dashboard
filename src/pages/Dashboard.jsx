@@ -1,5 +1,6 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { RefreshCw, Package, TrendingUp, Clock, CheckCircle } from 'lucide-react';
+import { useOrders } from '../hooks/useOrders';
 import { apiService } from '../services/api';
 import SearchBar from '../components/SearchBar';
 import FilterDropdowns from '../components/FilterDropdowns';
@@ -8,36 +9,21 @@ import OrderDetailModal from '../components/OrderDetailModal';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import Toast from '../components/Toast';
-
-export function useOrders(limit = 100, page = 1) {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const fetchAllOrders = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      await apiService.syncOrders();
-      const data = await apiService.fetchOrders(limit, page);
-      setOrders(data.orders); // <-- FIX: use only the array!
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [limit, page]);
-
-  // Fetch on mount or when limit/page changes
-  useEffect(() => {
-    fetchAllOrders();
-  }, [fetchAllOrders]);
-
-  return { orders, loading, error, refetchOrders: fetchAllOrders };
-}
+import Pagination from '../components/Pagination';
 
 const Dashboard = () => {
-  const { orders, loading, error, refetchOrders } = useOrders();
+  const { 
+    orders, 
+    loading, 
+    error, 
+    pagination, 
+    initialSyncDone, 
+    refetchOrders, 
+    goToPage, 
+    changePageSize, 
+    syncAndFetchOrders 
+  } = useOrders();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPlatform, setSelectedPlatform] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
@@ -64,7 +50,10 @@ const Dashboard = () => {
       // Search filter
       const matchesSearch = searchTerm === '' || 
         order.order_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.items.some(item => item.toLowerCase().includes(searchTerm.toLowerCase()));
+        (order.items && order.items.some(item => {
+          const itemText = typeof item === 'string' ? item : item?.name || '';
+          return itemText.toLowerCase().includes(searchTerm.toLowerCase());
+        }));
 
       // Platform filter
       const matchesPlatform = selectedPlatform === 'All' || order.platform === selectedPlatform;
@@ -124,6 +113,14 @@ const Dashboard = () => {
     }
   };
 
+  const handlePageChange = (page) => {
+    goToPage(page);
+  };
+
+  const handlePageSizeChange = (limit) => {
+    changePageSize(limit);
+  };
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -135,11 +132,10 @@ const Dashboard = () => {
     setToast({ ...toast, isVisible: false });
   };
 
-
-  if (loading) {
+  if (loading && !initialSyncDone) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <LoadingSpinner size="large" text="Loading orders..." />
+        <LoadingSpinner size="large" text="Syncing and loading orders..." />
       </div>
     );
   }
@@ -147,7 +143,7 @@ const Dashboard = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <ErrorMessage message={error} onRetry={refetchOrders} />
+        <ErrorMessage message={error} onRetry={syncAndFetchOrders} />
       </div>
     );
   }
@@ -249,10 +245,19 @@ const Dashboard = () => {
         </div>
 
         {/* Orders Table */}
-        <OrderTable 
-          orders={filteredOrders}
-          onOrderClick={handleOrderClick}
-        />
+        <div className="card overflow-hidden mb-6">
+          <OrderTable 
+            orders={filteredOrders}
+            onOrderClick={handleOrderClick}
+          />
+          
+          {/* Pagination */}
+          <Pagination
+            pagination={pagination}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+          />
+        </div>
 
         {/* Order Detail Modal */}
         <OrderDetailModal
