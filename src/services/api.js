@@ -1,10 +1,10 @@
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'https://order-summary-backend.onrender.com';
 
 // API service class to handle all API calls
 class ApiService {
-  async fetchOrders() {
+  async fetchOrders(limit = 100, page = 1) {
     try {
-      const response = await fetch(`${API_BASE_URL}/orders`);
+      const response = await fetch(`${API_BASE_URL}/orders?limit=${limit}&page=${page}`);
       if (!response.ok) {
         throw new Error(`Failed to fetch orders: ${response.status} ${response.statusText}`);
       }

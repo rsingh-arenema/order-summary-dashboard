@@ -1,6 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { RefreshCw, Package, TrendingUp, Clock, CheckCircle } from 'lucide-react';
-import { useOrders } from '../hooks/useOrders';
 import { apiService } from '../services/api';
 import SearchBar from '../components/SearchBar';
 import FilterDropdowns from '../components/FilterDropdowns';
@@ -9,6 +8,33 @@ import OrderDetailModal from '../components/OrderDetailModal';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import Toast from '../components/Toast';
+
+export function useOrders(limit = 100, page = 1) {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchAllOrders = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await apiService.syncOrders();
+      const data = await apiService.fetchOrders(limit, page);
+      setOrders(data.orders); // <-- FIX: use only the array!
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [limit, page]);
+
+  // Fetch on mount or when limit/page changes
+  useEffect(() => {
+    fetchAllOrders();
+  }, [fetchAllOrders]);
+
+  return { orders, loading, error, refetchOrders: fetchAllOrders };
+}
 
 const Dashboard = () => {
   const { orders, loading, error, refetchOrders } = useOrders();
@@ -108,6 +134,7 @@ const Dashboard = () => {
   const closeToast = () => {
     setToast({ ...toast, isVisible: false });
   };
+
 
   if (loading) {
     return (
